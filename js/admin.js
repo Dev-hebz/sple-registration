@@ -1,4 +1,4 @@
-import { db, storage, auth } from './app.js';
+import { db, auth } from './app.js';
 import { 
     collection, 
     getDocs, 
@@ -9,12 +9,6 @@ import {
     orderBy,
     onSnapshot 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { 
-    ref, 
-    uploadBytes, 
-    getDownloadURL,
-    deleteObject 
-} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { 
     signInWithEmailAndPassword, 
     signOut,
@@ -323,13 +317,8 @@ window.deleteAttachment = async function(regId, attachmentIndex) {
     
     try {
         const reg = allRegistrations.find(r => r.id === regId);
-        const attachment = reg.attachments[attachmentIndex];
         
-        // Delete from storage
-        const storageRef = ref(storage, attachment.url);
-        await deleteObject(storageRef);
-        
-        // Update document
+        // Update document (just remove from array, no storage deletion needed)
         reg.attachments.splice(attachmentIndex, 1);
         await updateDoc(doc(db, 'registrations', regId), {
             attachments: reg.attachments
@@ -374,7 +363,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
             remarks: document.getElementById('editRemarks').value
         };
         
-        // Upload new attachments if any
+        // Upload new attachments if any (convert to base64)
         const newFiles = document.getElementById('editAttachments').files;
         if (newFiles.length > 0) {
             const reg = allRegistrations.find(r => r.id === id);
@@ -382,13 +371,20 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
             
             for (let i = 0; i < newFiles.length; i++) {
                 const file = newFiles[i];
-                const fileRef = ref(storage, `attachments/${Date.now()}_${file.name}`);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
+                
+                // Convert to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
                 currentAttachments.push({
                     name: file.name,
-                    url: url,
-                    type: file.type
+                    type: file.type,
+                    size: file.size,
+                    data: base64Data
                 });
             }
             
@@ -411,31 +407,7 @@ window.deleteRegistration = async function(id) {
     if (!confirm('Are you sure you want to delete this registration?')) return;
     
     try {
-        const reg = allRegistrations.find(r => r.id === id);
-        
-        // Delete attachments from storage
-        if (reg.attachments) {
-            for (const att of reg.attachments) {
-                try {
-                    const storageRef = ref(storage, att.url);
-                    await deleteObject(storageRef);
-                } catch (e) {
-                    console.error('Error deleting attachment:', e);
-                }
-            }
-        }
-        
-        // Delete signature from storage
-        if (reg.signatureUrl) {
-            try {
-                const signatureRef = ref(storage, reg.signatureUrl);
-                await deleteObject(signatureRef);
-            } catch (e) {
-                console.error('Error deleting signature:', e);
-            }
-        }
-        
-        // Delete document
+        // Delete document (all data including base64 files are in Firestore)
         await deleteDoc(doc(db, 'registrations', id));
         
         alert('Registration deleted successfully!');
