@@ -162,10 +162,12 @@ window.viewRegistration = function(id) {
     
     let attachmentsHtml = '';
     if (reg.attachments && reg.attachments.length > 0) {
-        attachmentsHtml = reg.attachments.map(att => 
-            `<a href="${att.url}" target="_blank" class="text-blue-600 hover:underline block">
-                <i class="fas fa-file"></i> ${att.name}
-            </a>`
+        attachmentsHtml = reg.attachments.map((att, index) => 
+            `<div class="mb-2">
+                <a href="${att.data}" download="${att.name}" class="text-blue-600 hover:underline block">
+                    <i class="fas fa-download"></i> ${att.name} (${(att.size / 1024).toFixed(2)} KB)
+                </a>
+            </div>`
         ).join('');
     }
     
@@ -222,7 +224,7 @@ window.viewRegistration = function(id) {
             
             <div>
                 <p class="text-sm text-gray-500 mb-2">Signature</p>
-                <img src="${reg.signatureUrl}" class="border rounded max-w-md">
+                <img src="${reg.signatureData || reg.signatureUrl}" class="border rounded max-w-md">
             </div>
         </div>
     `;
