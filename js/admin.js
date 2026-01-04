@@ -1,0 +1,489 @@
+import { db, storage, auth } from './app.js';
+import { 
+    collection, 
+    getDocs, 
+    doc, 
+    updateDoc, 
+    deleteDoc,
+    query,
+    orderBy,
+    onSnapshot 
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { 
+    ref, 
+    uploadBytes, 
+    getDownloadURL,
+    deleteObject 
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+import { 
+    signInWithEmailAndPassword, 
+    signOut,
+    onAuthStateChanged 
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+let allRegistrations = [];
+let currentEditId = null;
+
+// Check auth state
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('dashboardSection').classList.remove('hidden');
+        loadRegistrations();
+    } else {
+        document.getElementById('loginSection').classList.remove('hidden');
+        document.getElementById('dashboardSection').classList.add('hidden');
+    }
+});
+
+// Login
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('adminEmail').value;
+    const password = document.getElementById('adminPassword').value;
+    
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        alert('Login failed: ' + error.message);
+    }
+});
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+});
+
+// Load registrations
+async function loadRegistrations() {
+    try {
+        const q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
+        
+        onSnapshot(q, (snapshot) => {
+            allRegistrations = [];
+            snapshot.forEach((doc) => {
+                allRegistrations.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            updateStats();
+            displayRegistrations(allRegistrations);
+        });
+    } catch (error) {
+        console.error('Error loading registrations:', error);
+    }
+}
+
+// Update statistics
+function updateStats() {
+    const total = allRegistrations.length;
+    const members = allRegistrations.filter(r => r.type === 'Member').length;
+    const associates = allRegistrations.filter(r => r.type === 'Associate Member').length;
+    const pending = allRegistrations.filter(r => !r.type || r.type === '').length;
+    
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('memberCount').textContent = members;
+    document.getElementById('associateCount').textContent = associates;
+    document.getElementById('pendingCount').textContent = pending;
+}
+
+// Display registrations in table
+function displayRegistrations(data) {
+    const tbody = document.getElementById('registrationsTable');
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                    <p>No registrations found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    data.forEach(reg => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+        
+        const fullName = `${reg.firstname} ${reg.midname} ${reg.surname}`;
+        const dateStr = reg.createdAt ? new Date(reg.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+        
+        const typeClass = reg.type === 'Member' ? 'bg-green-100 text-green-800' : 
+                         reg.type === 'Associate Member' ? 'bg-yellow-100 text-yellow-800' : 
+                         'bg-gray-100 text-gray-800';
+        
+        tr.innerHTML = `
+            <td class="px-4 py-3 text-sm text-gray-800">${fullName}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">${reg.email}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">${reg.contact}</td>
+            <td class="px-4 py-3 text-sm">
+                <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                    ${reg.category}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-sm">
+                <span class="px-2 py-1 rounded-full text-xs ${typeClass}">
+                    ${reg.type || 'Pending'}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">${dateStr}</td>
+            <td class="px-4 py-3 text-sm">
+                <div class="flex gap-2">
+                    <button onclick="viewRegistration('${reg.id}')" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editRegistration('${reg.id}')" 
+                        class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition text-xs">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteRegistration('${reg.id}')" 
+                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
+}
+
+// View registration
+window.viewRegistration = function(id) {
+    const reg = allRegistrations.find(r => r.id === id);
+    if (!reg) return;
+    
+    let attachmentsHtml = '';
+    if (reg.attachments && reg.attachments.length > 0) {
+        attachmentsHtml = reg.attachments.map(att => 
+            `<a href="${att.url}" target="_blank" class="text-blue-600 hover:underline block">
+                <i class="fas fa-file"></i> ${att.name}
+            </a>`
+        ).join('');
+    }
+    
+    const detailsHtml = `
+        <div class="space-y-4">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Registration Details</h3>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Full Name</p>
+                    <p class="font-semibold">${reg.firstname} ${reg.midname} ${reg.surname}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Email</p>
+                    <p class="font-semibold">${reg.email}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Contact Number</p>
+                    <p class="font-semibold">${reg.contact}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">WhatsApp Number</p>
+                    <p class="font-semibold">${reg.whatsapp}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">University</p>
+                    <p class="font-semibold">${reg.university}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Degree</p>
+                    <p class="font-semibold">${reg.degree}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Category</p>
+                    <p class="font-semibold">${reg.category}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Type</p>
+                    <p class="font-semibold">${reg.type || 'Not assigned'}</p>
+                </div>
+            </div>
+            
+            ${reg.remarks ? `
+                <div>
+                    <p class="text-sm text-gray-500">Remarks</p>
+                    <p class="font-semibold">${reg.remarks}</p>
+                </div>
+            ` : ''}
+            
+            <div>
+                <p class="text-sm text-gray-500 mb-2">Attachments</p>
+                ${attachmentsHtml || '<p class="text-gray-400">No attachments</p>'}
+            </div>
+            
+            <div>
+                <p class="text-sm text-gray-500 mb-2">Signature</p>
+                <img src="${reg.signatureUrl}" class="border rounded max-w-md">
+            </div>
+        </div>
+    `;
+    
+    // You can use a modal or alert for viewing
+    // For simplicity, using alert here (you can enhance this with a modal)
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto p-6">
+            ${detailsHtml}
+            <button onclick="this.closest('.fixed').remove()" 
+                class="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Close
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+// Edit registration
+window.editRegistration = function(id) {
+    const reg = allRegistrations.find(r => r.id === id);
+    if (!reg) return;
+    
+    currentEditId = id;
+    
+    // Populate form
+    document.getElementById('editId').value = id;
+    document.getElementById('editSurname').value = reg.surname;
+    document.getElementById('editFirstname').value = reg.firstname;
+    document.getElementById('editMidname').value = reg.midname;
+    document.getElementById('editContact').value = reg.contact;
+    document.getElementById('editWhatsapp').value = reg.whatsapp;
+    document.getElementById('editEmail').value = reg.email;
+    document.getElementById('editUniversity').value = reg.university;
+    document.getElementById('editDegree').value = reg.degree;
+    document.getElementById('editCategory').value = reg.category;
+    document.getElementById('editType').value = reg.type || '';
+    document.getElementById('editRemarks').value = reg.remarks || '';
+    
+    // Display current attachments
+    const attachmentsDiv = document.getElementById('currentAttachments');
+    attachmentsDiv.innerHTML = '';
+    
+    if (reg.attachments && reg.attachments.length > 0) {
+        reg.attachments.forEach((att, index) => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between bg-gray-100 p-3 rounded-lg';
+            div.innerHTML = `
+                <a href="${att.url}" target="_blank" class="text-blue-600 hover:underline">
+                    <i class="fas fa-file"></i> ${att.name}
+                </a>
+                <button type="button" onclick="deleteAttachment('${id}', ${index})" 
+                    class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            attachmentsDiv.appendChild(div);
+        });
+    }
+    
+    // Display signature
+    document.getElementById('currentSignature').src = reg.signatureUrl;
+    
+    // Show modal
+    document.getElementById('editModal').classList.add('active');
+};
+
+// Delete attachment
+window.deleteAttachment = async function(regId, attachmentIndex) {
+    if (!confirm('Delete this attachment?')) return;
+    
+    try {
+        const reg = allRegistrations.find(r => r.id === regId);
+        const attachment = reg.attachments[attachmentIndex];
+        
+        // Delete from storage
+        const storageRef = ref(storage, attachment.url);
+        await deleteObject(storageRef);
+        
+        // Update document
+        reg.attachments.splice(attachmentIndex, 1);
+        await updateDoc(doc(db, 'registrations', regId), {
+            attachments: reg.attachments
+        });
+        
+        // Refresh edit modal
+        editRegistration(regId);
+        
+    } catch (error) {
+        console.error('Error deleting attachment:', error);
+        alert('Error deleting attachment');
+    }
+};
+
+// Close edit modal
+document.getElementById('closeEditModal').addEventListener('click', () => {
+    document.getElementById('editModal').classList.remove('active');
+});
+
+document.getElementById('cancelEdit').addEventListener('click', () => {
+    document.getElementById('editModal').classList.remove('active');
+});
+
+// Submit edit form
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('editId').value;
+    
+    try {
+        const updateData = {
+            surname: document.getElementById('editSurname').value,
+            firstname: document.getElementById('editFirstname').value,
+            midname: document.getElementById('editMidname').value,
+            contact: document.getElementById('editContact').value,
+            whatsapp: document.getElementById('editWhatsapp').value,
+            email: document.getElementById('editEmail').value,
+            university: document.getElementById('editUniversity').value,
+            degree: document.getElementById('editDegree').value,
+            category: document.getElementById('editCategory').value,
+            type: document.getElementById('editType').value,
+            remarks: document.getElementById('editRemarks').value
+        };
+        
+        // Upload new attachments if any
+        const newFiles = document.getElementById('editAttachments').files;
+        if (newFiles.length > 0) {
+            const reg = allRegistrations.find(r => r.id === id);
+            const currentAttachments = reg.attachments || [];
+            
+            for (let i = 0; i < newFiles.length; i++) {
+                const file = newFiles[i];
+                const fileRef = ref(storage, `attachments/${Date.now()}_${file.name}`);
+                await uploadBytes(fileRef, file);
+                const url = await getDownloadURL(fileRef);
+                currentAttachments.push({
+                    name: file.name,
+                    url: url,
+                    type: file.type
+                });
+            }
+            
+            updateData.attachments = currentAttachments;
+        }
+        
+        await updateDoc(doc(db, 'registrations', id), updateData);
+        
+        document.getElementById('editModal').classList.remove('active');
+        alert('Registration updated successfully!');
+        
+    } catch (error) {
+        console.error('Error updating registration:', error);
+        alert('Error updating registration');
+    }
+});
+
+// Delete registration
+window.deleteRegistration = async function(id) {
+    if (!confirm('Are you sure you want to delete this registration?')) return;
+    
+    try {
+        const reg = allRegistrations.find(r => r.id === id);
+        
+        // Delete attachments from storage
+        if (reg.attachments) {
+            for (const att of reg.attachments) {
+                try {
+                    const storageRef = ref(storage, att.url);
+                    await deleteObject(storageRef);
+                } catch (e) {
+                    console.error('Error deleting attachment:', e);
+                }
+            }
+        }
+        
+        // Delete signature from storage
+        if (reg.signatureUrl) {
+            try {
+                const signatureRef = ref(storage, reg.signatureUrl);
+                await deleteObject(signatureRef);
+            } catch (e) {
+                console.error('Error deleting signature:', e);
+            }
+        }
+        
+        // Delete document
+        await deleteDoc(doc(db, 'registrations', id));
+        
+        alert('Registration deleted successfully!');
+        
+    } catch (error) {
+        console.error('Error deleting registration:', error);
+        alert('Error deleting registration');
+    }
+};
+
+// Export to Excel
+document.getElementById('exportExcel').addEventListener('click', () => {
+    if (allRegistrations.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    const data = allRegistrations.map(reg => ({
+        'Surname': reg.surname,
+        'First Name': reg.firstname,
+        'Middle Name': reg.midname,
+        'Email': reg.email,
+        'Contact': reg.contact,
+        'WhatsApp': reg.whatsapp,
+        'University': reg.university,
+        'Degree': reg.degree,
+        'Category': reg.category,
+        'Type': reg.type || 'Pending',
+        'Remarks': reg.remarks || '',
+        'Date': reg.createdAt ? new Date(reg.createdAt.seconds * 1000).toLocaleDateString() : ''
+    }));
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    
+    // Set column widths
+    ws['!cols'] = [
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 25 },
+        { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 30 },
+        { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 12 }
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Registrations');
+    XLSX.writeFile(wb, `SPLE_Kuwait_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`);
+});
+
+// Refresh data
+document.getElementById('refreshData').addEventListener('click', () => {
+    loadRegistrations();
+});
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', filterRegistrations);
+document.getElementById('categoryFilter').addEventListener('change', filterRegistrations);
+document.getElementById('typeFilter').addEventListener('change', filterRegistrations);
+
+function filterRegistrations() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    
+    let filtered = allRegistrations.filter(reg => {
+        const fullName = `${reg.firstname} ${reg.midname} ${reg.surname}`.toLowerCase();
+        const email = reg.email.toLowerCase();
+        
+        const matchesSearch = fullName.includes(search) || email.includes(search);
+        const matchesCategory = !categoryFilter || reg.category === categoryFilter;
+        const matchesType = typeFilter === '' ? true : 
+                           typeFilter === '' ? (!reg.type || reg.type === '') : 
+                           reg.type === typeFilter;
+        
+        return matchesSearch && matchesCategory && matchesType;
+    });
+    
+    displayRegistrations(filtered);
+}

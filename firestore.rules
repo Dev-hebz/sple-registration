@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Registrations collection
+    match /registrations/{registrationId} {
+      // Anyone can create a registration (for public form submission)
+      allow create: if true;
+      
+      // Only authenticated admins can read, update, and delete
+      allow read, update, delete: if request.auth != null;
+    }
+    
+    // All other collections require authentication
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "SPLE Kuwait Registration - TSOK",
+  "short_name": "SPLE Kuwait",
+  "description": "SPLE Kuwait Registration System by Teachers Specialists Organization Kuwait",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e3a8a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/tsok-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/tsok-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Registration Form",
+      "short_name": "Register",
+      "description": "Open registration form",
+      "url": "/",
+      "icons": [{ "src": "/tsok-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Admin",
+      "description": "Open admin dashboard",
+      "url": "/admin.html",
+      "icons": [{ "src": "/tsok-logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

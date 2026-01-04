@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPLE Kuwait Registration - TSOK</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="SPLE Kuwait Registration System by TSOK">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/tsok-logo.png">
+    <link rel="apple-touch-icon" href="/tsok-logo.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Signature Pad -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    
+    <style>
+        .godmisoft-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        
+        .signature-pad {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="godmisoft-gradient text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="/tsok-logo.png" alt="TSOK Logo" class="h-16 w-16 rounded-full bg-white p-1">
+                    <div>
+                        <h1 class="text-2xl font-bold">SPLE Kuwait Registration</h1>
+                        <p class="text-blue-100">Teachers Specialists Organization Kuwait</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        
+        <!-- Registration Form -->
+        <div id="registrationSection" class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-user-plus text-blue-600"></i> Registration Form
+            </h2>
+            
+            <form id="registrationForm" class="space-y-6">
+                
+                <!-- Personal Information -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Personal Information</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Surname <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="surname" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter surname">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                First Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="firstname" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter first name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Middle Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="midname" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter middle name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Contact Information</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Contact Number <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" id="contact" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="+965 XXXX XXXX">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                WhatsApp Number <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" id="whatsapp" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="+965 XXXX XXXX">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address <span class="text-red-500">*</span>
+                        </label>
+                        <input type="email" id="email" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="your.email@example.com">
+                    </div>
+                </div>
+
+                <!-- Educational Background -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Educational Background</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                University <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="university" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter university name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Degree <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="degree" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Bachelor of Secondary Education">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Category</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Category <span class="text-red-500">*</span>
+                        </label>
+                        <select id="category" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">-- Select Category --</option>
+                            <option value="SPLE First-Taker">SPLE First-Taker</option>
+                            <option value="SPLE Retaker">SPLE Retaker</option>
+                            <option value="Board Passer">Board Passer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Attachments -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Attachments</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Documents (PDF, PNG, JPG) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="file" id="attachments" multiple accept=".pdf,.png,.jpg,.jpeg" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-2">You can select multiple files</p>
+                    </div>
+                    
+                    <div id="filePreview" class="mt-4 space-y-2"></div>
+                </div>
+
+                <!-- Signature -->
+                <div class="border-b pb-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Signature</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Please sign below <span class="text-red-500">*</span>
+                        </label>
+                        <canvas id="signaturePad" class="signature-pad w-full" height="200"></canvas>
+                        <button type="button" id="clearSignature" 
+                            class="mt-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                            <i class="fas fa-eraser"></i> Clear Signature
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" id="submitBtn"
+                        class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-lg font-semibold shadow-lg">
+                        <i class="fas fa-paper-plane"></i> Submit Registration
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message (Hidden by default) -->
+        <div id="successMessage" class="hidden bg-white rounded-lg shadow-lg p-8 text-center">
+            <div class="text-green-500 text-6xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Registration Submitted!</h2>
+            <p class="text-gray-600 mb-6">
+                Thank you for registering. We have received your information and will verify it shortly. 
+                A confirmation email has been sent to your email address.
+            </p>
+            <button id="newRegistration" 
+                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus"></i> New Registration
+            </button>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin text-blue-600 text-5xl mb-4">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <p class="text-gray-700 text-lg">Submitting your registration...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="godmisoft-gradient text-white mt-12 py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">© 2025 Teachers Specialists Organization Kuwait (TSOK)</p>
+            <p class="text-blue-100">Developed by <span class="font-bold">Godmisoft</span></p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="/js/app.js"></script>
+    <script src="/js/register.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+    </script>
+</body>
+</html>

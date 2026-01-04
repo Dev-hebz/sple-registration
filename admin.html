@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SPLE Kuwait Registration</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/tsok-logo.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        .godmisoft-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        
+        .modal {
+            display: none;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="godmisoft-gradient text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="/tsok-logo.png" alt="TSOK Logo" class="h-16 w-16 rounded-full bg-white p-1">
+                    <div>
+                        <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+                        <p class="text-blue-100">SPLE Kuwait Registration Management</p>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <img src="/tsok-logo.png" alt="TSOK Logo" class="h-20 w-20 mx-auto mb-4 rounded-full">
+                <h2 class="text-2xl font-bold text-gray-800">Admin Login</h2>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="adminEmail" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="adminPassword" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Section (Hidden by default) -->
+    <main id="dashboardSection" class="hidden container mx-auto px-4 py-8">
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Registrations</p>
+                        <p class="text-3xl font-bold text-gray-800" id="totalCount">0</p>
+                    </div>
+                    <div class="text-blue-500 text-4xl">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Members</p>
+                        <p class="text-3xl font-bold text-gray-800" id="memberCount">0</p>
+                    </div>
+                    <div class="text-green-500 text-4xl">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Associate Members</p>
+                        <p class="text-3xl font-bold text-gray-800" id="associateCount">0</p>
+                    </div>
+                    <div class="text-yellow-500 text-4xl">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Pending</p>
+                        <p class="text-3xl font-bold text-gray-800" id="pendingCount">0</p>
+                    </div>
+                    <div class="text-orange-500 text-4xl">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-list"></i> Registrations
+                </h2>
+                
+                <div class="flex gap-2">
+                    <button id="exportExcel" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </button>
+                    
+                    <button id="refreshData" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Search and Filter -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" id="searchInput" placeholder="Search by name or email..." 
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                
+                <select id="categoryFilter" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Categories</option>
+                    <option value="SPLE First-Taker">SPLE First-Taker</option>
+                    <option value="SPLE Retaker">SPLE Retaker</option>
+                    <option value="Board Passer">Board Passer</option>
+                </select>
+                
+                <select id="typeFilter" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    <option value="Member">Member</option>
+                    <option value="Associate Member">Associate Member</option>
+                    <option value="">Unassigned</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Contact</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="registrationsTable" class="divide-y divide-gray-200">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-edit"></i> Edit Registration
+                </h3>
+                <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <form id="editForm" class="p-6 space-y-6">
+                <input type="hidden" id="editId">
+                
+                <!-- Personal Information -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Surname</label>
+                        <input type="text" id="editSurname" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input type="text" id="editFirstname" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                        <input type="text" id="editMidname" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Contact Information -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                        <input type="tel" id="editContact" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
+                        <input type="tel" id="editWhatsapp" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input type="email" id="editEmail" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Educational Background -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">University</label>
+                        <input type="text" id="editUniversity" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Degree</label>
+                        <input type="text" id="editDegree" required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select id="editCategory" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="SPLE First-Taker">SPLE First-Taker</option>
+                        <option value="SPLE Retaker">SPLE Retaker</option>
+                        <option value="Board Passer">Board Passer</option>
+                    </select>
+                </div>
+                
+                <!-- Type Assignment -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <select id="editType" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Select Type --</option>
+                        <option value="Member">Member</option>
+                        <option value="Associate Member">Associate Member</option>
+                    </select>
+                </div>
+                
+                <!-- Remarks -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                    <textarea id="editRemarks" rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Add any remarks or notes..."></textarea>
+                </div>
+                
+                <!-- Attachments -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Attachments</label>
+                    <div id="currentAttachments" class="space-y-2 mb-4"></div>
+                    
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Add New Attachments</label>
+                    <input type="file" id="editAttachments" multiple accept=".pdf,.png,.jpg,.jpeg"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Signature -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Signature</label>
+                    <img id="currentSignature" class="border rounded-lg max-w-md">
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancelEdit" 
+                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="godmisoft-gradient text-white mt-12 py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">© 2025 Teachers Specialists Organization Kuwait (TSOK)</p>
+            <p class="text-blue-100">Developed by <span class="font-bold">Godmisoft</span></p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

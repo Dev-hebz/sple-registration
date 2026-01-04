@@ -1,0 +1,24 @@
+{
+  "name": "sple-kuwait-registration",
+  "version": "1.0.0",
+  "description": "SPLE Kuwait Registration System - TSOK",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "TSOK",
+    "SPLE",
+    "Kuwait",
+    "Registration",
+    "PWA"
+  ],
+  "author": "Godmisoft",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {}
+}
