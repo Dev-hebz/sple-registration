@@ -1,6 +1,6 @@
 import { db, storage } from './app.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+import { ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -84,6 +84,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Helper function to upload file with progress
+    async function uploadFileWithProgress(file, path) {
+        return new Promise((resolve, reject) => {
+            const storageRef = ref(storage, path);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // Progress monitoring (optional)
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log('Upload is ' + progress + '% done');
+                },
+                (error) => {
+                    // Handle errors
+                    console.error('Upload error:', error);
+                    reject(error);
+                },
+                async () => {
+                    // Upload completed successfully
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        resolve(downloadURL);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            );
+        });
+    }
+
     // Form submission
     document.getElementById('registrationForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -115,35 +145,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: 'pending'
             };
             
-            // Upload signature
+            // Upload signature using Firebase SDK
             const signatureBlob = await new Promise(resolve => {
                 canvas.toBlob(resolve);
             });
             
-            const signatureRef = ref(storage, `signatures/${Date.now()}_signature.png`);
-            await uploadBytes(signatureRef, signatureBlob);
-            formData.signatureUrl = await getDownloadURL(signatureRef);
+            const signaturePath = `signatures/${Date.now()}_signature.png`;
+            console.log('Uploading signature...');
+            formData.signatureUrl = await uploadFileWithProgress(signatureBlob, signaturePath);
+            console.log('Signature uploaded successfully!');
             
-            // Upload attachments
+            // Upload attachments using Firebase SDK
             const files = document.getElementById('attachments').files;
             const attachmentUrls = [];
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const fileRef = ref(storage, `attachments/${Date.now()}_${file.name}`);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
+                const attachmentPath = `attachments/${Date.now()}_${file.name}`;
+                console.log(`Uploading ${file.name}...`);
+                
+                const url = await uploadFileWithProgress(file, attachmentPath);
+                
                 attachmentUrls.push({
                     name: file.name,
                     url: url,
                     type: file.type
                 });
+                console.log(`${file.name} uploaded successfully!`);
             }
             
             formData.attachments = attachmentUrls;
             
             // Save to Firestore
+            console.log('Saving to Firestore...');
             const docRef = await addDoc(collection(db, 'registrations'), formData);
+            console.log('Registration saved with ID:', docRef.id);
             
             // Send confirmation email (using a cloud function or email service)
             await sendConfirmationEmail(formData);
@@ -156,7 +192,20 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             loading.classList.remove('active');
             console.error('Error submitting registration:', error);
-            alert('There was an error submitting your registration. Please try again.');
+            
+            // More detailed error message
+            let errorMessage = 'There was an error submitting your registration. ';
+            if (error.code === 'storage/unauthorized') {
+                errorMessage += 'Storage permission denied. Please contact administrator.';
+            } else if (error.code === 'storage/canceled') {
+                errorMessage += 'Upload was canceled.';
+            } else if (error.code === 'storage/unknown') {
+                errorMessage += 'An unknown error occurred. Please try again.';
+            } else {
+                errorMessage += error.message || 'Please try again.';
+            }
+            
+            alert(errorMessage);
         }
     });
 
