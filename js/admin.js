@@ -162,13 +162,19 @@ window.viewRegistration = function(id) {
     
     let attachmentsHtml = '';
     if (reg.attachments && reg.attachments.length > 0) {
-        attachmentsHtml = reg.attachments.map((att, index) => 
-            `<div class="mb-2">
-                <a href="${att.data}" download="${att.name}" class="text-blue-600 hover:underline block">
-                    <i class="fas fa-download"></i> ${att.name} (${(att.size / 1024).toFixed(2)} KB)
+        attachmentsHtml = reg.attachments.map((att, index) => {
+            const sizeKB = att.size ? (att.size / 1024).toFixed(2) : 'N/A';
+            return `<div class="mb-2 flex items-center gap-2">
+                <a href="${att.data}" download="${att.name}" 
+                   class="text-blue-600 hover:underline flex items-center gap-2">
+                    <i class="fas fa-download"></i> ${att.name} (${sizeKB} KB)
                 </a>
-            </div>`
-        ).join('');
+                <button onclick="viewFile('${att.data}', '${att.type}')" 
+                        class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </div>`;
+        }).join('');
     }
     
     const detailsHtml = `
@@ -225,12 +231,15 @@ window.viewRegistration = function(id) {
             <div>
                 <p class="text-sm text-gray-500 mb-2">Signature</p>
                 <img src="${reg.signatureData || reg.signatureUrl}" class="border rounded max-w-md">
+                <br>
+                <a href="${reg.signatureData || reg.signatureUrl}" download="signature_${reg.surname}.png"
+                   class="mt-2 inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    <i class="fas fa-download"></i> Download Signature
+                </a>
             </div>
         </div>
     `;
     
-    // You can use a modal or alert for viewing
-    // For simplicity, using alert here (you can enhance this with a modal)
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
     modal.innerHTML = `
@@ -243,6 +252,20 @@ window.viewRegistration = function(id) {
         </div>
     `;
     document.body.appendChild(modal);
+};
+
+// View file in new window/tab
+window.viewFile = function(base64Data, fileType) {
+    if (fileType.startsWith('image/')) {
+        // Open image in new window
+        const win = window.open();
+        win.document.write(`<img src="${base64Data}" style="max-width:100%;">`);
+    } else if (fileType === 'application/pdf') {
+        // Open PDF in new window
+        window.open(base64Data);
+    } else {
+        alert('Cannot preview this file type. Please download it instead.');
+    }
 };
 
 // Edit registration
