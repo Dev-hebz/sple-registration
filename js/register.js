@@ -254,12 +254,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             console.log('Saving to Firestore...');
-            const docRef = await addDoc(collection(db, 'registrations'), formData);
-            console.log('Registration saved with ID:', docRef.id);
             
-            loading.classList.remove('active');
-            document.getElementById('registrationSection').classList.add('hidden');
-            document.getElementById('successMessage').classList.remove('hidden');
+            // Add timeout to prevent hanging
+            const savePromise = addDoc(collection(db, 'registrations'), formData);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout - please check your internet connection and Firebase configuration')), 15000)
+            );
+            
+            try {
+                const docRef = await Promise.race([savePromise, timeoutPromise]);
+                console.log('✅ Registration saved with ID:', docRef.id);
+                
+                loading.classList.remove('active');
+                document.getElementById('registrationSection').classList.add('hidden');
+                document.getElementById('successMessage').classList.remove('hidden');
+            } catch (firestoreError) {
+                console.error('❌ Firestore Error:', firestoreError);
+                throw new Error(`Database error: ${firestoreError.message}. Please check Firebase configuration.`);
+            }
             
         } catch (error) {
             loading.classList.remove('active');
