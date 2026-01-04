@@ -171,6 +171,37 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Pre-check file sizes before processing
+        const files = document.getElementById('attachments').files;
+        let estimatedTotalSize = 0;
+        const fileSizeWarnings = [];
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            // Base64 encoding increases size by ~37%
+            const estimatedBase64Size = file.size * 1.37;
+            estimatedTotalSize += estimatedBase64Size;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                fileSizeWarnings.push(`"${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB (max 2MB per file)`);
+            }
+        }
+        
+        // Add signature size estimate (small, ~50KB)
+        estimatedTotalSize += 50 * 1024;
+        
+        // Check if estimated total exceeds 1MB Firestore limit
+        if (estimatedTotalSize > 1048576) {
+            const totalMB = (estimatedTotalSize / 1024 / 1024).toFixed(2);
+            alert(`Files are too large! Estimated total: ${totalMB}MB (max 1MB).\n\nPlease:\n1. Compress PDFs at https://www.ilovepdf.com/compress_pdf\n2. Use smaller images\n3. Upload fewer files`);
+            return;
+        }
+        
+        if (fileSizeWarnings.length > 0) {
+            alert('File size issues:\n\n' + fileSizeWarnings.join('\n'));
+            return;
+        }
+        
         const loading = document.getElementById('loadingOverlay');
         loading.classList.add('active');
         
@@ -195,7 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.signatureData = canvas.toDataURL('image/png', 0.7);
             console.log('Signature converted!');
             
-            const files = document.getElementById('attachments').files;
             const attachments = [];
             
             for (let i = 0; i < files.length; i++) {
