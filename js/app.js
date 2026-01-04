@@ -5,12 +5,12 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 
 // TODO: Replace with your Firebase config
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBIYMgewErOAhJIPdSlnRMw8b_3HXlEQ9Y",
+    authDomain: "sple-registration.firebaseapp.com",
+    projectId: "sple-registration",
+    storageBucket: "sple-registration.firebasestorage.app",
+    messagingSenderId: "303053898858",
+    appId: "1:303053898858:web:52fecf93e03f87e7737613"
 };
 
 // Initialize Firebase
