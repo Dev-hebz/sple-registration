@@ -142,20 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Compress PDF by converting to images if needed
-    function compressPDF(file, maxSizeKB = 800) {
+    function compressPDF(file, maxSizeKB = 500) {
         return new Promise((resolve, reject) => {
+            if (file.size > 2 * 1024 * 1024) {
+                reject(new Error(`PDF file "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use a file smaller than 2MB.`));
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = () => {
                 const base64 = reader.result;
-                // If PDF is small enough, keep it as is
-                if (base64.length <= maxSizeKB * 1024 * 1.37) {
-                    resolve(base64);
-                } else {
-                    // If too large, just store first 800KB worth
-                    // In production, you'd use a PDF compression library
-                    console.warn('PDF too large, truncating...');
-                    resolve(base64.substring(0, maxSizeKB * 1024 * 1.37));
-                }
+                // For PDFs, just convert to base64 (we can't easily compress them in browser)
+                resolve(base64);
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
@@ -166,10 +164,15 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fileToBase64Compressed(file) {
         console.log(`Processing ${file.name} (${(file.size / 1024).toFixed(2)} KB)...`);
         
+        // Check individual file size first
+        if (file.size > 2 * 1024 * 1024) {
+            throw new Error(`File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum file size is 2MB.`);
+        }
+        
         if (file.type.startsWith('image/')) {
-            return await compressImage(file, 500); // 500KB max per image
+            return await compressImage(file, 400); // 400KB max per image (more aggressive)
         } else if (file.type === 'application/pdf') {
-            return await compressPDF(file, 800); // 800KB max per PDF
+            return await compressPDF(file, 500); // 500KB max per PDF
         } else {
             // For other file types, just convert
             return new Promise((resolve, reject) => {
@@ -236,12 +239,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             formData.attachments = attachments;
             
-            // Calculate total size
-            const totalSize = JSON.stringify(formData).length;
-            console.log(`Total data size: ${(totalSize / 1024).toFixed(2)} KB`);
+            // Calculate total size more accurately
+            const jsonString = JSON.stringify(formData);
+            const totalSizeBytes = new Blob([jsonString]).size;
+            const totalSizeMB = totalSizeBytes / (1024 * 1024);
             
-            if (totalSize > 1000000) { // ~1MB limit for Firestore
-                throw new Error('Total file size too large. Please use smaller files or fewer attachments.');
+            console.log(`Total data size: ${totalSizeMB.toFixed(2)} MB`);
+            
+            // Firestore has 1MB document limit
+            if (totalSizeBytes > 1048576) { // 1MB = 1048576 bytes
+                throw new Error(`Total file size is ${totalSizeMB.toFixed(2)}MB. Please reduce file sizes or upload fewer files. Maximum total size is 1MB.`);
             }
             
             // Save everything to Firestore
