@@ -4,22 +4,47 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 
 // Initialize Signature Pad
 const canvas = document.getElementById('signaturePad');
-const signaturePad = new SignaturePad(canvas, {
-    backgroundColor: 'rgb(255, 255, 255)',
-    penColor: 'rgb(0, 0, 0)'
-});
 
-// Resize canvas
+// Set canvas size properly
 function resizeCanvas() {
+    const container = canvas.parentElement;
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    canvas.width = canvas.offsetWidth * ratio;
-    canvas.height = canvas.offsetHeight * ratio;
-    canvas.getContext("2d").scale(ratio, ratio);
-    signaturePad.clear();
+    
+    // Set display size (css pixels)
+    canvas.style.width = '100%';
+    canvas.style.height = '200px';
+    
+    // Set actual size in memory (scaled to account for extra pixel density)
+    canvas.width = container.offsetWidth * ratio;
+    canvas.height = 200 * ratio;
+    
+    // Normalize coordinate system to use css pixels
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
 }
 
-window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
+
+const signaturePad = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255, 255, 255)',
+    penColor: 'rgb(0, 0, 0)',
+    minWidth: 1,
+    maxWidth: 2.5,
+    velocityFilterWeight: 0.7
+});
+
+// Prevent scrolling when touching the canvas
+function preventScroll(event) {
+    event.preventDefault();
+}
+
+canvas.addEventListener("touchstart", preventScroll, { passive: false });
+canvas.addEventListener("touchmove", preventScroll, { passive: false });
+
+window.addEventListener("resize", () => {
+    resizeCanvas();
+    signaturePad.clear();
+});
 
 // Clear signature button
 document.getElementById('clearSignature').addEventListener('click', () => {
