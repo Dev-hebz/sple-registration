@@ -2,8 +2,8 @@ import { db } from './app.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Cloudinary Configuration - UPDATE THESE WITH YOUR CLOUDINARY CREDENTIALS
-const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUD_NAME'; // Get from cloudinary.com dashboard
-const CLOUDINARY_UPLOAD_PRESET = 'YOUR_UPLOAD_PRESET'; // Create unsigned upload preset
+const CLOUDINARY_CLOUD_NAME = 'df17jssg2'; // Get from cloudinary.com dashboard
+const CLOUDINARY_UPLOAD_PRESET = 'sple_uploads'; // Create unsigned upload preset
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', function() {
