@@ -158,18 +158,25 @@ window.viewRegistration = function(id) {
     if (reg.attachments && reg.attachments.length > 0) {
         attachmentsHtml = reg.attachments.map((att, index) => {
             const sizeKB = att.size ? (att.size / 1024).toFixed(2) : 'N/A';
+            const sizeMB = att.size ? (att.size / 1024 / 1024).toFixed(2) : 'N/A';
+            const displaySize = att.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+            
             return `<div class="mb-2 flex items-center gap-2">
-                <a href="${att.data}" download="${att.name}" 
+                <a href="${att.url}" download="${att.name}" target="_blank"
                    class="text-blue-600 hover:underline flex items-center gap-2">
-                    <i class="fas fa-download"></i> ${att.name} (${sizeKB} KB)
+                    <i class="fas fa-download"></i> ${att.name} (${displaySize})
                 </a>
-                <button onclick="viewFile('${att.data}', '${att.type}')" 
+                <button onclick="window.open('${att.url}', '_blank')" 
                         class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">
                     <i class="fas fa-eye"></i> View
                 </button>
             </div>`;
         }).join('');
     }
+    
+    // Handle both old (signatureData/signatureUrl) and new (signature object) formats
+    const signatureUrl = reg.signature?.url || reg.signatureData || reg.signatureUrl || '';
+    const signatureName = `signature_${reg.surname}.png`;
     
     const detailsHtml = `
         <div class="space-y-4">
@@ -222,15 +229,17 @@ window.viewRegistration = function(id) {
                 ${attachmentsHtml || '<p class="text-gray-400">No attachments</p>'}
             </div>
             
-            <div>
-                <p class="text-sm text-gray-500 mb-2">Signature</p>
-                <img src="${reg.signatureData || reg.signatureUrl}" class="border rounded max-w-md">
-                <br>
-                <a href="${reg.signatureData || reg.signatureUrl}" download="signature_${reg.surname}.png"
-                   class="mt-2 inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    <i class="fas fa-download"></i> Download Signature
-                </a>
-            </div>
+            ${signatureUrl ? `
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Signature</p>
+                    <img src="${signatureUrl}" class="border rounded max-w-md mb-2" alt="Signature">
+                    <br>
+                    <a href="${signatureUrl}" download="${signatureName}" target="_blank"
+                       class="inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        <i class="fas fa-download"></i> Download Signature
+                    </a>
+                </div>
+            ` : ''}
         </div>
     `;
     
@@ -246,20 +255,6 @@ window.viewRegistration = function(id) {
         </div>
     `;
     document.body.appendChild(modal);
-};
-
-// View file in new window/tab
-window.viewFile = function(base64Data, fileType) {
-    if (fileType.startsWith('image/')) {
-        // Open image in new window
-        const win = window.open();
-        win.document.write(`<img src="${base64Data}" style="max-width:100%;">`);
-    } else if (fileType === 'application/pdf') {
-        // Open PDF in new window
-        window.open(base64Data);
-    } else {
-        alert('Cannot preview this file type. Please download it instead.');
-    }
 };
 
 // Edit registration
