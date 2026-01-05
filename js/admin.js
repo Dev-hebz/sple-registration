@@ -299,8 +299,11 @@ window.editRegistration = function(id) {
         });
     }
     
-    // Display signature
-    document.getElementById('currentSignature').src = reg.signatureUrl;
+    // Display signature - FIXED to handle both old and new formats
+    const signatureUrl = reg.signature?.url || reg.signatureData || reg.signatureUrl || '';
+    if (signatureUrl) {
+        document.getElementById('currentSignature').src = signatureUrl;
+    }
     
     // Show modal
     document.getElementById('editModal').classList.add('active');
